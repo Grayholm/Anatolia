@@ -28,7 +28,7 @@ async def create_user(session: AsyncSession, email: str, hashed_password: str):
     await session.refresh(user)
     return user
 
-async def dependies(session: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
+async def get_current_user(session: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get('sub')
@@ -37,8 +37,7 @@ async def dependies(session: AsyncSession = Depends(get_db), token: str = Depend
         user = await get_user_by_email(session, email)
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
-        user_id = user.id
-        return user_id
+        return user.id
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate token')
     
@@ -47,9 +46,8 @@ async def dependies(session: AsyncSession = Depends(get_db), token: str = Depend
 async def add_book(
         book: schemas.BookCreate,
         session: AsyncSession = Depends(get_db),
-        token: str = Depends(oauth2_scheme)
+        user_id: str = Depends(get_current_user)
 ):
-    user_id = dependies(token)
     try:
         new_book = models.Library(
             title = book.title,

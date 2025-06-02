@@ -43,4 +43,4 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         raise HTTPException(status_code=400, detail="Email not registered")
     
     token = create_access_token(data={'sub': user.email})
-    return {'token': token, "token_type": "bearer"}
+    return {'access_token': token, "token_type": "bearer"}
