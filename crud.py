@@ -68,3 +68,41 @@ async def get_books(session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(models.Library))
     return result.scalars().all()
 
+@router.get('/books/{book_id}', response_model=schemas.BookResponse)
+async def get_book(book_id: int, session: AsyncSession = Depends(get_db), current_user_id = Depends(get_current_user)):
+    result = await session.execute(select(models.Library).where(models.Library.id == book_id))
+    book = result.scalars().first()
+    if not book:
+        raise HTTPException(status_code=404, detail='Book not found')
+    
+    if book.owner_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only get your own books"
+        )
+
+    try:
+        return book
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'{str(e)}')
+
+@router.delete('/books/{book_id}')
+async def delete_book(book_id: int, session: AsyncSession = Depends(get_db), current_user_id = Depends(get_current_user)):
+    result = await session.execute(select(models.Library).where(models.Library.id == book_id))
+    book = result.scalars().first()
+    if not book:
+        raise HTTPException(status_code=404, detail='Book not found')
+    
+    if book.owner_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own books"
+        )
+
+    try:
+        await session.delete(book)
+        await session.commit()
+        return {'success': f'Book {book_id} successfully deleted'}
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f'{str(e)}')
