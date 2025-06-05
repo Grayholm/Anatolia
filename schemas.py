@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
+import models
 
 class UserCreate(BaseModel):
     email: EmailStr = Field(...)
@@ -7,6 +8,8 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: str
+    hashed_password: str
+    role: models.UserRole
 
     class Config:
         orm_mode = True
