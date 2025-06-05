@@ -27,7 +27,7 @@ def get_password_hash(password: str):
 def create_access_token(data: dict):
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post('/auth/register', response_model = schemas.UserResponse)
+@router.post('/auth/register', response_model = schemas.UserResponse, tags=['Библиотека'])
 async def register(user: schemas.UserCreate, session: AsyncSession = Depends(get_db)):
     db_user = await crud.get_user_by_email(session, user.email)
     if db_user:
@@ -36,11 +36,11 @@ async def register(user: schemas.UserCreate, session: AsyncSession = Depends(get
     hashed_password = get_password_hash(user.password)
     return await crud.create_user(session, user.email, hashed_password)
 
-@router.post('/auth/login', response_model=schemas.Token)
+@router.post('/auth/login', response_model=schemas.Token, tags=['Библиотека'])
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
     user = await crud.get_user_by_email(session, form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Email not registered")
+        raise HTTPException(status_code=400, detail="Email not registered or password is not correct")
     
     token = create_access_token(data={'sub': user.email})
     return {'access_token': token, "token_type": "bearer"}
